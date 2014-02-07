@@ -1,0 +1,3 @@
+MODULE KindAbsError
+
+TYPE e = (Int ** Int)(\X::{*,*}.X)

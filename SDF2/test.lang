@@ -1,0 +1,5 @@
+MODULE S
+IMPORT foo.bar.A
+TYPE t = a
+VAL not = \ a : Int . IF a THEN FALSE ELSE TRUE
+VAL main = IF not (not TRUE) THEN 3 ELSE 4

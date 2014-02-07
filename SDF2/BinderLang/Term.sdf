@@ -1,0 +1,77 @@
+module BinderLang/Term
+
+imports BinderLang/Kind
+imports BinderLang/Type
+imports BinderLang/Lexical
+
+exports
+  sorts Term Binding BindingAs Field Branch
+
+  %% -- Terms ----------------------------------------------------------
+  context-free syntax
+    Term Term                                   -> Term { cons("App"),    left }
+    Term "[" Type "]"                           -> Term { cons("TApp")         }
+    "\\" ID ":" Type "." Term                   -> Term { cons("Abs")          }
+    "\\" ID "::" Kind "." Term                  -> Term { cons("TAbs")         }
+    ID                                          -> Term { cons("Var")          }
+    QID                                         -> Term { cons("QVar")         }
+    INT                                         -> Term { cons("Int")          }
+    STRING                                      -> Term { cons("String")       }
+    "TRUE"                                      -> Term { cons("True")         }
+    "FALSE"                                     -> Term { cons("False")        }
+    "IF" Term "THEN" Term "ELSE" Term           -> Term { cons("If")           }
+    "FOLD" "[" Type "]" Term                    -> Term { cons("Fold")         }
+    "UNFOLD" "[" Type "]" Term                  -> Term { cons("Unfold")       }
+    "{" { Field ","}* "}"                       -> Term { cons("Record")       }
+    Term "!" ID                                 -> Term { cons("Selection")    }
+    "<" Field ">" ":" Type                      -> Term { cons("Variant")      }
+    "CASE" Term "OF" { Branch ";" }+            -> Term { cons("Case")         }
+    Term ":" Type                               -> Term { cons("Ascription")   }
+    "LET" "SEQ" "<" Id ">" Binding+ "IN" Term   -> Term { cons("LetSeq")       }
+    "LET" "PAR" "<" Id ">" Binding+ "IN" Term   -> Term { cons("LetPar")       }
+    "(" Term ")"                                -> Term { brackets             }
+    "ADD" Term Term                             -> Term { cons("Add")          }
+    "SUB" Term Term                             -> Term { cons("Sub")          }
+    "MUL" Term Term                             -> Term { cons("Mul")          }
+    "DIV" Term Term                             -> Term { cons("Div")          }
+    "CHAROF" Term Term                          -> Term { cons("CharOf")       }
+    "CONCAT" Term Term                          -> Term { cons("Concat")       }
+    "GT" Term Term                              -> Term { cons("Greater")      }
+    "SIZE" Term                                 -> Term { cons("StrSize")      }
+
+    ID "=" Term -> Field { cons("Field") }
+
+    "<" ID "=" ID ">" "=>" Term -> Branch { cons("Branch") }
+
+    ID "<" Id ">" "=" Term          -> Binding   { cons("Binding")    }
+    ID "<"    ">" "=" Term          -> Binding   { cons("BindingWithoutVar")    }
+    BindingAs                       -> Binding
+    ID "<" Id ">" ":" Type "=" Term -> BindingAs { cons("BindingAs") }
+
+%%TODO make sure <0> doesn't break anything
+  context-free priorities
+      Term "!" ID                                 -> Term
+    > Term "[" Type "]"                           -> Term
+    > Term Term                                   -> Term
+<0> > Term ":" Type                               -> Term
+    > { 
+       "MUL" Term Term                            -> Term 
+       "DIV" Term Term                            -> Term 
+       "ADD" Term Term                            -> Term 
+       "SUB" Term Term                            -> Term 
+       "CHAROF" Term Term                         -> Term 
+       "CONCAT" Term Term                         -> Term 
+       "GT" Term Term                             -> Term 
+       "SIZE" Term                                -> Term 
+      }
+ <0> > {
+      "FOLD" "[" Type "]" Term                    -> Term 
+      "UNFOLD" "[" Type "]" Term                  -> Term 
+      "\\" ID ":" Type "." Term                   -> Term
+      "\\" ID "::" Kind "." Term                  -> Term
+      "LET" "SEQ" "<" Id ">" Binding+ "IN" Term   -> Term
+      "LET" "PAR" "<" Id ">" Binding+ "IN" Term   -> Term
+      "CASE" Term "OF" { Branch ";" }+            -> Term
+      "IF" Term "THEN" Term "ELSE" Term           -> Term 
+      "<" ID "=" ID ">" "=>" Term                 -> Branch 
+      }

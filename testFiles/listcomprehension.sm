@@ -1,0 +1,30 @@
+MODULE  listcomprehension
+IMPORT default
+PUBLIC IMPORT list
+
+
+
+
+
+VAL listId = \A::*. \x:List A. x
+PUBLIC SEQ BINDER ListC : (ID,List) = singleton SYNTAX [ BODY | BINDINGS  ]
+PUBLIC BINDING genB : (List, ID) FOR ListC = concatMap SYNTAX VAR <- BINDEE 
+PUBLIC BINDING genC : (List, ID) FOR ListC = concatMap SYNTAX VAR <- BINDEE ,
+PUBLIC BINDING genD : (List, ID) FOR ListC = concatMap SYNTAX BINDEE -> VAR,
+VAL lclet = \X::*.\Y::*.\x:X.\f:X->List Y.f x 
+PUBLIC BINDING let : (ID, ID) FOR ListC = lclet SYNTAX let VAR = BINDEE ,
+
+PUBLIC VAL guardImpl = 
+  \X::*.\Y::*. \c:Bool. \b:({}->List Y). IF c THEN b {} ELSE Nil [Y]
+BINDING guardW : (\X::*.Bool, \X::*.{}) FOR ListC = guardImpl
+  SYNTAX BINDEE 
+BINDING guardO : (\X::*.Bool, \X::*.{}) FOR ListC = guardImpl
+  SYNTAX BINDEE ,
+  
+PUBLIC VAL exm1 = [(xx,y)| x <- 0 until 4, let xx = MUL x 10 , y <- 0 until 3 ] 
+PUBLIC VAL exm = [[ (i,j) | i <- 0 until 2 ] | j <- 0 until 3 ]
+PUBLIC VAL exm2 =  [ (z,y) | x <- 0 until 7, y <- 0 until 3, x + y > 5 , let z = x + y , ]
+
+       
+PUBLIC VAL main = (\g:Int. CASE < foo = g > : < foo : Int , bar : String > OF
+< foo = f > => [[ (i,j) | i <- g until 10 ] |  0 until g -> j, ]) 3

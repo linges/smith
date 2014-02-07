@@ -1,0 +1,32 @@
+MODULE  optionmonad
+IMPORT default
+
+
+PUBLIC TYPE Option = \X::*. < Some : X, None : {}>
+VAL Some = \X::*. \x:X. < Some = x > : Option X 
+VAL None = \X::*. < None = {} > : Option X 
+
+VAL optionMap = \X::*.\Y::*.\x: Option X. \f: X -> Option Y .
+    CASE x OF
+    < Some = s > => f s;
+    < None = s > => None [Y] 
+
+TYPE Monad = Option 
+VAL return = Some
+VAL bind = optionMap
+VAL guardImpl = bind
+VAL dolift = \X::*.\Y::*.\x:X.\f: X -> Option Y. bind [X] [Y] ( Some [X] x ) f
+VAL dolift2 = \X::*.\Y::*.\x:X.\f: X -> Option Y. f x 
+VAL mId = \X::*.\m: Monad X. m
+
+
+PUBLIC SEQ BINDER do : (Monad, Monad) = mId SYNTAX do { BINDINGS  BODY }
+PUBLIC BINDING arrow : (Monad, ID) FOR do = bind      SYNTAX VAR <- BINDEE ;
+PUBLIC BINDING guard : (Monad, ID) FOR do = guardImpl SYNTAX BINDEE ;
+PUBLIC BINDING let :   (ID, ID)    FOR do = dolift2    SYNTAX let VAR = BINDEE ;
+
+
+PUBLIC VAL exm =  do { x <- Some [Int] 2 ;
+                       y <- Some [Int] 3 ;
+                       let z = x + y ;
+                       return [Int] z }

@@ -1,0 +1,4 @@
+MODULE OverflowError 
+
+
+PUBLIC VAL main = MUL 1000000 100000 

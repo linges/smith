@@ -1,0 +1,5 @@
+MODULE CaseError
+
+
+PUBLIC VAL main = CASE <foo = 3 > : < foo : Int, bar : Int > OF
+                       < bar = bar > => bar

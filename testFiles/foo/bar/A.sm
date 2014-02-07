@@ -1,0 +1,10 @@
+MODULE foo.bar.A
+
+IMPORT default
+PUBLIC IMPORT QUALIFIED a.b.c.Z AS Z
+
+PUBLIC VAL dr = 3
+
+PUBLIC VAL vier = 2 + 2
+
+PUBLIC BRACKET pm = ARG + ARG - ARG AS ARG + d ARG - ARG b USING d b

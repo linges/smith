@@ -1,0 +1,3 @@
+MODULE KindMuError
+
+TYPE e = MU(Int, Int)

@@ -1,0 +1,152 @@
+module BinderLang/Lexical
+
+exports
+  sorts
+    ID QID MID LEXEME STRING INT Id
+    Keyword BasicType
+
+  %% -- Layout and comments --------------------------------------------
+  lexical syntax
+    [\ \t\r\n]        -> LAYOUT
+    "--" ~[\n\r]* LineTerminator -> LAYOUT 
+  context-free restrictions
+    LAYOUT? -/- [\ \t\r\n] 
+    LAYOUT? -/- [\-].[\-] 
+
+  %% -- Line Terminators ----------------------------------------------
+        
+  lexical syntax
+    [\n]           -> LineTerminator
+    [\r][\n]       -> LineTerminator
+    CR             -> LineTerminator
+    EOF            -> LineTerminator
+
+    [\r] -> CR
+
+  lexical restrictions
+    CR -/- [\n]
+
+  %% End of file is empty.
+  lexical syntax    
+    -> EOF
+
+  lexical restrictions
+    EOF -/- ~[]
+
+  %% -- Identifiers ----------------------------------------------------
+  lexical syntax
+    [a-zA-Z][a-zA-Z0-9]*                -> ID
+    ID "." {ID "."}+                    -> QID
+
+    %%Rest is only allowed to start with defs
+    %%I have no idea why I have to call LAYOUT explicit
+   RestVisibility? LAYOUT* "TYPE" ~[]* EOF                  -> Rest
+   RestVisibility? LAYOUT* "VAL" ~[]* EOF                   -> Rest
+   RestVisibility? LAYOUT* RestBinderType LAYOUT* "BINDER"~[]* EOF  -> Rest
+   RestVisibility? LAYOUT* "BINDING" ~[]* EOF               -> Rest
+   RestVisibility? LAYOUT* "BRACKET" ~[]* EOF               -> Rest
+
+        
+    "PUBLIC"  -> RestVisibility 
+    "PRIVATE" -> RestVisibility
+    "SEQ" -> RestBinderType
+    "PAR" -> RestBinderType
+    
+    ID  -> MID
+    QID -> MID
+
+    ID  -> Id
+    QID -> Id
+
+    Keyword -> ID  { reject }
+    Keyword -> MID { reject }
+
+    BasicType -> ID  { reject }
+    BasicType -> MID { reject }
+
+  lexical restrictions
+    ID  -/- [a-zA-Z0-9]
+    QID -/- [\.]
+    MID -/- [\.]
+
+  %% -- Constants ------------------------------------------------------
+  lexical syntax
+    "\""~[\"\\\n\r]*"\"" -> STRING
+   "-"? [0-9]+           -> INT 
+
+  %% -- Lexemes in syntax annotations ----------------------------------
+  lexical syntax
+    [\!-\~][\!-\~]* -> LEXEME
+
+ %%   Keyword -> LEXEME { reject }
+
+  lexical restrictions
+    LEXEME -/- [\!-\~]
+    INT -/- [0-9]
+
+  %% -- Keywords -------------------------------------------------------
+  lexical syntax
+    "MODULE"    -> Keyword
+    "IMPORT"    -> Keyword
+    "QUALIFIED" -> Keyword
+    "AS"        -> Keyword
+    "RENAMING"  -> Keyword
+    "ONLY"      -> Keyword
+    "WITHOUT"   -> Keyword
+    "VAL"       -> Keyword
+    "CON"       -> Keyword
+    "DATA"      -> Keyword
+    "TYPE"      -> Keyword
+    "BINDER"    -> Keyword
+    "BINDING"   -> Keyword
+    "BRACKET"   -> Keyword
+    "USING"     -> Keyword
+    "ARG"       -> Keyword
+    "FIX"       -> Keyword
+    "LET"       -> Keyword
+    "SEQ"       -> Keyword
+    "PAR"       -> Keyword
+    "REC"       -> Keyword
+    "FN"        -> Keyword
+    "EQN"       -> Keyword
+    "IF"        -> Keyword
+    "THEN"      -> Keyword
+    "ELSE"      -> Keyword
+    "TRUE"      -> Keyword
+    "FALSE"     -> Keyword
+    "PUBLIC"    -> Keyword
+    "PRIVATE"   -> Keyword
+    "FOLD"      -> Keyword
+    "UNFOLD"    -> Keyword
+    "VAR"       -> Keyword
+    "BINDINGS"  -> Keyword
+    "LR"        -> Keyword
+    "RL"        -> Keyword
+    "BODY"      -> Keyword
+    "BINDEE"    -> Keyword
+    "ARG"       -> Keyword
+    "ADD"       -> Keyword
+    "SUB"       -> Keyword
+    "MUL"       -> Keyword
+    "DIV"       -> Keyword
+    "CHAROF"    -> Keyword
+    "CONCAT"    -> Keyword
+    "GT"        -> Keyword
+    "SIZE"      -> Keyword
+    "LEFT"      -> Keyword
+    "RIGHT"     -> Keyword
+    
+  lexical restrictions
+    "MODULE" "IMPORT" "QUALIFIED" "AS" "RENAMING" "ONLY" "WITHOUT" "PUBLIC" "PIRVATE"
+    "VAL" "CON" "DATA" "TYPE" "BINDER" "BINDING" "IF" "THEN" "ELSE" "TRUE" "FALSE" "LEFT" "RIGHT"
+    "LR" "RL" "BODY" "BINDING" "BINDEE" "VAR" "ARG" "SIZE" "SUB" "ADD" "DIV" "MUL" "GT" "CONCAT" "CHAROF"
+    "BRACKET" "USING" "ARG" "FIX" "LET" "SEQ" "PAR" "REC" "EQN" "FN" "FOLD" "UNFOLD" -/- [a-zA-Z0-9]
+
+  %% -- Basic types ----------------------------------------------------
+  lexical syntax
+    "Int"    -> BasicType
+    "String" -> BasicType
+    "Bool" -> BasicType
+
+  lexical restrictions
+    "Int" "String" "Bool" -/- [a-zA-Z0-9]

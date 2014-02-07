@@ -1,0 +1,24 @@
+
+#latex
+*.aux
+*.bbl
+*.blg
+*.toc
+*.rtf
+*.synctex.gz
+*.lot
+#java specific
+*.class
+.classpath
+.project
+.project/*
+## generic files to ignore
+*~
+*.lock
+*.DS_Store
+*.swp
+*.out
+*.log
+.ensime*
+.emacs*
+

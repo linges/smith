@@ -1,0 +1,64 @@
+module BinderLang/Module
+
+imports BinderLang/Lexical
+imports BinderLang/Kind
+imports BinderLang/Term
+imports BinderLang/SyntaxExtension
+
+exports
+  context-free start-symbols Module ModuleRest DefRest
+  sorts
+    Module ModuleRest Import Def DefRest TypeDef ValDef BinderDef BindingDef BinderType BracketDef
+    ImportedModule ImportModification ImportRenaming ImportRestriction
+    ExportedIdentifier IdentifierRenaming ImportedIdentifier Visibility
+   
+
+
+  context-free syntax
+    "MODULE" MID Import* Def* -> Module { cons("Module") }
+    "MODULE" MID Import* Rest? -> ModuleRest { cons("ModuleRest") }
+    Def Rest? 	               -> DefRest { cons("DefRest") }
+	
+    TypeDef    -> Def
+    ValDef     -> Def
+    BinderDef  -> Def
+    BindingDef -> Def
+    BracketDef -> Def
+    
+
+    "PUBLIC"  -> Visibility { cons("Public")  }
+    "PRIVATE" -> Visibility { cons("Private") }
+
+    %% -- Imports ------------------------------------------------------
+    Visibility? "IMPORT" ImportedModule ImportModification* -> Import { cons("Import") }
+
+    MID                     -> ImportedModule { cons("NotQualified")   }
+    "QUALIFIED" MID         -> ImportedModule { cons("Qualified")   }
+    "QUALIFIED" MID "AS" ID -> ImportedModule { cons("QualifiedAs") }
+
+    ImportRenaming    -> ImportModification
+    ImportRestriction -> ImportModification
+
+    ID  -> ExportedIdentifier
+    QID -> ExportedIdentifier
+
+    "RENAMING" IdentifierRenaming+ -> ImportRenaming { cons("Renaming") }
+
+    "(" ExportedIdentifier "AS" ExportedIdentifier ")"           -> IdentifierRenaming { cons("SingleRenaming") }
+    "(" ExportedIdentifier+ ")" "AS" "(" ExportedIdentifier+ ")" -> IdentifierRenaming { cons("ListRenaming")   }
+
+    ExportedIdentifier -> ImportedIdentifier
+    IdentifierRenaming -> ImportedIdentifier
+
+    "ONLY" ImportedIdentifier+    -> ImportRestriction { cons("Only")    }
+    "WITHOUT" ExportedIdentifier+ -> ImportRestriction { cons("Without") }
+
+    %% -- Definitions --------------------------------------------------
+    Visibility? "TYPE" ID "=" Type AppSyntax?                   -> TypeDef    { cons("TypeDef")    }
+    Visibility? "VAL" ID "=" Term AppSyntax?                    -> ValDef     { cons("ValDef")     }
+    Visibility? BinderType "BINDER" ID ":" "("Type"," Type")" "=" Term BinderSyntax?   -> BinderDef  { cons("BinderDef")  }
+    Visibility? "BINDING" ID ":" "("Type"," Type")" "FOR" Id "=" Term BindingSyntax?   -> BindingDef { cons("BindingDef") }
+    Visibility? "BRACKET" ID "=" BracketLhs "AS" BracketRhs     -> BracketDef { cons("BracketDef") }
+
+    "SEQ" -> BinderType { cons("SeqBinder") }
+    "PAR" -> BinderType { cons("ParBinder") }

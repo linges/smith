@@ -1,0 +1,5 @@
+MODULE AmbError
+
+VAL f = \x: Int. \x:Int. x SYNTAX ARG + ARG
+VAL g = \x: Int. \x:Int. x SYNTAX ARG + ARG
+VAL e = 2 + 3

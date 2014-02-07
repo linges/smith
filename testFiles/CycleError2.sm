@@ -1,0 +1,3 @@
+MODULE CycleError2
+
+IMPORT CycleError

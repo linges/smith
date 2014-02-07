@@ -1,0 +1,34 @@
+MODULE default
+
+-- Bool
+PUBLIC VAL eq = \x:Int . \y:Int . IF GT x y THEN FALSE
+                                  ELSE
+                                      IF GT y x THEN FALSE
+                                      ELSE TRUE 
+                                  SYNTAX ARG == ARG 
+
+
+
+PUBLIC VAL not = \x:Bool. IF x THEN FALSE ELSE TRUE
+PUBLIC VAL gt = \x:Int.\y:Int. GT x y SYNTAX ARG > ARG
+PUBLIC VAL and =\x:Bool.\y:Bool. IF x THEN y
+                                 ELSE FALSE SYNTAX ARG && ARG
+
+-- Int
+PUBLIC VAL plus =\x:Int. \y:Int. ADD x y SYNTAX ARG + ARG 
+PUBLIC VAL minus =\x:Int. \y:Int. SUB x y SYNTAX ARG - ARG 
+
+-- Tuple
+PUBLIC TYPE Pair = \X::*.\Y::*. {x:X, y:Y}
+PUBLIC TYPE IntPair = Pair Int Int
+PUBLIC VAL intPair = \x:Int.\y:Int.{x=x,y=y} SYNTAX ( ARG , ARG )
+
+PUBLIC TYPE ID = \X::*.X
+PUBLIC TYPE Fix = \A::*. \B::*. MU (\R::*=>*. \args::*. R args -> A -> B, {})
+
+PUBLIC VAL fix = (\A::*.\B::*. \f:(A->B)-> A->B . 
+    (\x:Fix A B.(\y:A.  f ((UNFOLD[Fix A B] x) x) y))
+    (FOLD [Fix A B]
+     (\x:Fix A B.(\y:A. f ((UNFOLD[Fix A B] x) x) y )))
+    )
+

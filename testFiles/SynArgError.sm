@@ -1,0 +1,4 @@
+MODULE SynArgError
+
+
+VAL s = 3 SYNTAX ARG  + ARG ! ARG

@@ -1,0 +1,4 @@
+MODULE NoLexError
+
+
+VAL s = \x:Int.\x:Int.\y:Int. y SYNTAX ARG ARG ARG

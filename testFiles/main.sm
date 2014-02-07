@@ -1,0 +1,4 @@
+MODULE main 
+IMPORT default
+
+PUBLIC VAL main = 2 + 3 

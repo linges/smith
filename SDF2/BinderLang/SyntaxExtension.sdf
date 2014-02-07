@@ -1,0 +1,33 @@
+module BinderLang/SyntaxExtension
+
+imports BinderLang/Lexical
+
+exports
+  sorts
+    AppSyntaxElement AppSyntax BracketLhs BracketRhs BracketUsing
+    BinderSyntax BinderSyntaxElement
+    BindingSyntax BindingSyntaxElement
+
+  context-free syntax
+    "SYNTAX" AppSyntaxElement+ -> AppSyntax { cons("AppSyntax") }
+     
+    "ARG"  -> AppSyntaxElement { cons("AppArg")    }
+    LEXEME -> AppSyntaxElement { cons("AppLexeme") }
+
+    AppSyntaxElement+               -> BracketLhs   { cons("BracketLhs")   }
+    AppSyntaxElement+ BracketUsing? -> BracketRhs   { cons("BracketRhs")   }
+    "USING" LEXEME LEXEME           -> BracketUsing { cons("BracketUsing") }
+
+    "SYNTAX" BinderSyntaxElement+ -> BinderSyntax { cons("BinderSyntax") }
+
+    "BODY"          -> BinderSyntaxElement { cons("BinderBody")   }
+    "LR" "BINDINGS" -> BinderSyntaxElement { cons("LRBindings")   }
+    "RL" "BINDINGS" -> BinderSyntaxElement { cons("RLBindings")   }
+    "BINDINGS"      -> BinderSyntaxElement { cons("Bindings")     }
+    LEXEME          -> BinderSyntaxElement { cons("BinderLexeme") }
+
+    "SYNTAX" BindingSyntaxElement+ -> BindingSyntax { cons("BindingSyntax") }
+
+    "VAR"     -> BindingSyntaxElement { cons("BindingVar")     }
+    "BINDEE"  -> BindingSyntaxElement { cons("BindingBindee")  }
+    LEXEME    -> BindingSyntaxElement { cons("BindingLexeme")  }

@@ -1,0 +1,5 @@
+MODULE KindAppError
+
+TYPE e = (\X::*.X) (Int ** Int)
+
+PUBLIC VAL main = 2

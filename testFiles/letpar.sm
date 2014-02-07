@@ -1,0 +1,31 @@
+MODULE letpar
+
+IMPORT default 
+
+PAR BINDER where : (ID,ID) =  \A::*.\x:A.x
+     SYNTAX BODY where BINDINGS
+
+VAL bid = \A::*.\B::*.\x:A. x
+
+BINDING assign : (ID, ID) FOR where = bid SYNTAX VAR = BINDEE
+
+PUBLIC VAL main2 = (\g:Int. CASE < foo = g > : < foo : Int , bar : String > OF
+< foo = f > => 
+   MUL a b
+   where
+   a = (f where f = f)
+   b = 3)  22
+
+   
+PUBLIC VAL main =
+       a
+       where
+       a = (b where b = 2) 
+       f = 3
+       
+
+VAL asd = LET PAR < where > 
+    assign < x > = 2
+    assign < y > = LET PAR < where > assign < x > = 4 IN x 
+    assign < z > = 5
+    IN x

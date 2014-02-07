@@ -1,0 +1,41 @@
+module BinderLang/Type
+
+imports BinderLang/Lexical
+imports BinderLang/Kind
+
+exports
+  sorts Type TyDecl
+
+  context-free syntax
+    Type "->" Type                 -> Type { cons("TyArrow"), right }
+    Type Type                      -> Type { cons("TyApp"),   left  }
+    "FORALL" ID "::" Kind "." Type -> Type { cons("TyForall")       }
+    "\\" ID "::" Kind "." Type     -> Type { cons("TyAbs")          }
+    "Int"                          -> Type { cons("TyInt")          }
+    "String"                       -> Type { cons("TyString")       }
+    "Bool"                         -> Type { cons("TyBool")         }
+    ID                             -> Type { cons("TyVar")          }
+    QID                            -> Type { cons("TyQVar")         }
+    "{" { TyDecl ","}* "}"         -> Type { cons("TyRecord")       }
+    "<" { TyDecl ","}+ ">"         -> Type { cons("TyVariant")      }
+    Type "**" Type                 -> Type { cons("TyPair")         }
+    Type "." "1"                   -> Type { cons("TyFst")          }
+    Type "." "2"                   -> Type { cons("TySnd")          }
+    "MU" "(" Type "," Type ")"     -> Type { cons("TyMu")           }
+
+    "(" Type ")"                   -> Type { brackets               }
+
+    ID ":" Type -> TyDecl { cons("TyDecl") }
+
+  context-free priorities
+      Type Type                       -> Type
+    > {
+        Type "." "1"                  -> Type
+        Type "." "2"                  -> Type
+      }
+    > Type "->" Type                  -> Type
+    > Type "**" Type                  -> Type
+    > {
+       "FORALL" ID "::" Kind "." Type -> Type
+        "\\" ID "::" Kind "." Type    -> Type
+       }

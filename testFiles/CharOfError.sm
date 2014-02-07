@@ -1,0 +1,4 @@
+MODULE CharOfError
+
+
+PUBLIC VAL main = CHAROF "a" 2

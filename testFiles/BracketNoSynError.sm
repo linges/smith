@@ -1,0 +1,3 @@
+MODULE BracketNoSynError
+
+BRACKET a = ARG AS ARG * ( ARG + ARG )

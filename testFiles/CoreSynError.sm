@@ -1,0 +1,3 @@
+MODULE CoreSynError
+
+TYPE f = Int SYNTAX ARG ! ARG

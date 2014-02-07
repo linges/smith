@@ -1,0 +1,3 @@
+MODULE TypeError
+
+VAL s = IF (\x:Int.x) "s" THEN 2 ELSE TRUE

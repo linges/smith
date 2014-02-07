@@ -1,0 +1,10 @@
+module BinderLang/Kind
+
+exports
+  sorts Kind
+
+  context-free syntax
+    Kind "=>" Kind        -> Kind { cons("KiArrow"), right }
+    "*"                   -> Kind { cons("KiStar")         }
+    "{" Kind "," Kind "}" -> Kind { cons("KiPair")         }
+    "(" Kind ")"          -> Kind { brackets               }

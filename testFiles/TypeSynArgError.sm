@@ -1,0 +1,3 @@
+MODULE TypeSynArgError
+
+TYPE s = Int SYNTAX ARG o ARG a ARG

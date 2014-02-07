@@ -1,0 +1,17 @@
+MODULE main 
+IMPORT foo.bar.A
+IMPORT default
+IMPORT QUALIFIED a.b.c.Z
+VAL bid = \A::*.\B::*.\x:A.\f:A->B.f x
+BINDING assign : (ID, ID) FOR a.b.c.Z.where = bid SYNTAX VAR = BINDEE
+
+VAl ii = \x:Int. \y:Int. DIV x y SYNTAX ARG \ ARG
+
+VAL f = \f: Int -> Int. \x:Int. f x SYNTAX ARG @ ARG
+VAL inc = \x:Int. MUL 2 x
+BRACKET asd = ARG AS   ( \ ARG : ARG .  ARG ) @ ARG 
+TYPE p = \X::*.\Y::*. { x : X, y : Y } SYNTAX ARG + ARG
+TYPE r = \X::*.\Y::*. { a : X, v : Y } SYNTAX ARG * ARG
+BRACKET pr = ARG AS ARG + ( ARG * ARG)
+
+PUBLIC VAL main = 2 

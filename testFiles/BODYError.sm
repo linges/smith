@@ -1,0 +1,6 @@
+MODULE BODYError
+
+
+PUBLIC TYPE ID = \X::*.X
+SEQ BINDER where : (ID,ID) =  \A::*.\x:A.x
+     SYNTAX where LR BINDINGS

@@ -1,0 +1,65 @@
+
+MODULE binder 
+PUBLIC IMPORT foo.bar.A 
+IMPORT default
+
+
+TYPE Fix = \A::*. \B::*. MU (\R::*=>*. \args::*. R args -> A -> B, {})
+
+VAL fix = (\A::*.\B::*. \f:(A->B)-> A->B . 
+    (\x:Fix A B.(\y:A.  f ((UNFOLD[Fix A B] x) x) y))
+    (FOLD [Fix A B]
+     (\x:Fix A B.(\y:A. f ((UNFOLD[Fix A B] x) x) y )))
+    )
+VAL isNil = \A::*. \xs:List A.
+  CASE UNFOLD [List A] xs OF
+    <nil=nil> => TRUE;
+    <cons=cons> => FALSE
+
+VAL isCons = \A::*. \xs:List A. not (isNil [A] xs)
+
+VAL Nil = \A::*. FOLD [List A] <nil={}> : < nil: {} cons: { hd: A tl: List A }>
+
+VAL Cons = \A::*. \x:A. \xs:List A.
+  FOLD [List A] <cons={hd=x tl=xs}> : < nil: {} cons: { hd: A tl: List A }>
+
+VAL head = \A::*. \xs:List A.
+  CASE UNFOLD [List A] xs OF
+    <cons=cons> => (cons!hd)
+
+VAL tail = \A::*. \xs:List A.
+  CASE UNFOLD [List A] xs OF
+    <cons=cons> => (cons!tl)
+
+VAL concat1 = \A::*. \concat: List A -> List A -> List A.
+  \xs:List A. \ys:List A.
+    IF (isNil [A] xs) THEN ys
+    ELSE
+      (Cons [A] (head [A] xs) (concat (tail [A] xs) ys))
+
+VAL concat = \A::*.
+  (((fix [List A]) [List A->List A]) (concat1 [A]))
+
+VAL concatMap1 = \A::*. \B::*.
+  \concatMap:(A->List B)->List A->List B.
+    \f:A->List B. \xs:List A.
+      IF isNil [A] xs THEN
+        (Nil [B])
+      ELSE
+        (concat [B] (f (head [A] xs)) (concatMap f (tail [A] xs)))
+VAL concatMap = \A::*. \B::*.
+  ((fix [A->List B]) [List A->List B])
+    (concatMap1 [A] [B])
+VAL concatMap2 = \A::*. \B::*. \xs:List A. \f:A->List B. ((concatMap [A]) [B]) f xs 
+VAL singelton = \A::*. \x:A. (Cons [A]) x (Nil [A])
+VAL ListFromTo1 = \ListFromTo:Nat -> (List Nat). \x:Nat. 
+    IF (eq x -1) THEN (Nil [Nat])
+    ELSE ((Cons [Nat]) x (ListFromTo (SUB x 1) ))
+VAL ListFromTo = fix [Nat] [List Nat] ListFromTo1
+SEQ BINDER ListC : (ID,List) = singelton SYNTAX for { LR BINDINGS -> BODY }
+BINDING gen  : (List, ID) FOR ListC = concatMap2 SYNTAX VAR <- BINDEE ;
+BINDING gen2 : (List, ID) FOR ListC = concatMap2 SYNTAX BINDEE -> VAR ;
+VAL dd =  for {  
+ z <- ListFromTo 1 ;
+ a <- ListFromTo 2 ;
+-> {x=z y=a} }

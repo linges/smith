@@ -1,0 +1,383 @@
+definition
+module BinderLang/SyntaxExtension
+
+imports BinderLang/Lexical
+
+exports
+  sorts
+    AppSyntaxElement AppSyntax BracketLhs BracketRhs BracketUsing
+    BinderSyntax BinderSyntaxElement
+    BindingSyntax BindingSyntaxElement
+
+  context-free syntax
+    "SYNTAX" AppSyntaxElement+ -> AppSyntax { cons("AppSyntax") }
+     
+    "ARG"  -> AppSyntaxElement { cons("AppArg")    }
+    LEXEME -> AppSyntaxElement { cons("AppLexeme") }
+
+    AppSyntaxElement+               -> BracketLhs   { cons("BracketLhs")   }
+    AppSyntaxElement+ BracketUsing? -> BracketRhs   { cons("BracketRhs")   }
+    "USING" LEXEME LEXEME           -> BracketUsing { cons("BracketUsing") }
+
+    "SYNTAX" BinderSyntaxElement+ -> BinderSyntax { cons("BinderSyntax") }
+
+    "BODY"          -> BinderSyntaxElement { cons("BinderBody")   }
+    "LR" "BINDINGS" -> BinderSyntaxElement { cons("LRBindings")   }
+    "RL" "BINDINGS" -> BinderSyntaxElement { cons("RLBindings")   }
+    "BINDINGS"      -> BinderSyntaxElement { cons("Bindings")     }
+    LEXEME          -> BinderSyntaxElement { cons("BinderLexeme") }
+
+    "SYNTAX" BindingSyntaxElement+ -> BindingSyntax { cons("BindingSyntax") }
+
+    "VAR"     -> BindingSyntaxElement { cons("BindingVar")     }
+    "BINDEE"  -> BindingSyntaxElement { cons("BindingBindee")  }
+    LEXEME    -> BindingSyntaxElement { cons("BindingLexeme")  }
+
+module BinderLang/Type
+
+imports BinderLang/Lexical
+imports BinderLang/Kind
+
+exports
+  sorts Type TyDecl
+
+  context-free syntax
+    Type "->" Type                 -> Type { cons("TyArrow"), right }
+    Type Type                      -> Type { cons("TyApp"),   left  }
+    "FORALL" ID "::" Kind "." Type -> Type { cons("TyForall")       }
+    "\\" ID "::" Kind "." Type     -> Type { cons("TyAbs")          }
+    "Int"                          -> Type { cons("TyInt")          }
+    "String"                       -> Type { cons("TyString")       }
+    "Bool"                         -> Type { cons("TyBool")         }
+    ID                             -> Type { cons("TyVar")          }
+    QID                            -> Type { cons("TyQVar")         }
+    "{" { TyDecl ","}* "}"         -> Type { cons("TyRecord")       }
+    "<" { TyDecl ","}+ ">"         -> Type { cons("TyVariant")      }
+    Type "**" Type                 -> Type { cons("TyPair")         }
+    Type "." "1"                   -> Type { cons("TyFst")          }
+    Type "." "2"                   -> Type { cons("TySnd")          }
+    "MU" "(" Type "," Type ")"     -> Type { cons("TyMu")           }
+
+    "(" Type ")"                   -> Type { brackets               }
+
+    ID ":" Type -> TyDecl { cons("TyDecl") }
+
+  context-free priorities
+      Type Type                       -> Type
+    > {
+        Type "." "1"                  -> Type
+        Type "." "2"                  -> Type
+      }
+    > Type "->" Type                  -> Type
+    > Type "**" Type                  -> Type
+    > {
+       "FORALL" ID "::" Kind "." Type -> Type
+        "\\" ID "::" Kind "." Type    -> Type
+       }
+
+module BinderLang/Term
+
+imports BinderLang/Kind
+imports BinderLang/Type
+imports BinderLang/Lexical
+
+exports
+  sorts Term Binding BindingAs Field Branch
+
+  %% -- Terms ----------------------------------------------------------
+  context-free syntax
+    Term Term                                   -> Term { cons("App"),    left }
+    Term "[" Type "]"                           -> Term { cons("TApp")         }
+    "\\" ID ":" Type "." Term                   -> Term { cons("Abs")          }
+    "\\" ID "::" Kind "." Term                  -> Term { cons("TAbs")         }
+    ID                                          -> Term { cons("Var")          }
+    QID                                         -> Term { cons("QVar")         }
+    INT                                         -> Term { cons("Int")          }
+    STRING                                      -> Term { cons("String")       }
+    "TRUE"                                      -> Term { cons("True")         }
+    "FALSE"                                     -> Term { cons("False")        }
+    "IF" Term "THEN" Term "ELSE" Term           -> Term { cons("If")           }
+    "FOLD" "[" Type "]" Term                    -> Term { cons("Fold")         }
+    "UNFOLD" "[" Type "]" Term                  -> Term { cons("Unfold")       }
+    "{" { Field ","}* "}"                       -> Term { cons("Record")       }
+    Term "!" ID                                 -> Term { cons("Selection")    }
+    "<" Field ">" ":" Type                      -> Term { cons("Variant")      }
+    "CASE" Term "OF" { Branch ";" }+            -> Term { cons("Case")         }
+    Term ":" Type                               -> Term { cons("Ascription")   }
+    "LET" "SEQ" "<" Id ">" Binding+ "IN" Term   -> Term { cons("LetSeq")       }
+    "LET" "PAR" "<" Id ">" Binding+ "IN" Term   -> Term { cons("LetPar")       }
+    "(" Term ")"                                -> Term { brackets             }
+    "ADD" Term Term                             -> Term { cons("Add")          }
+    "SUB" Term Term                             -> Term { cons("Sub")          }
+    "MUL" Term Term                             -> Term { cons("Mul")          }
+    "DIV" Term Term                             -> Term { cons("Div")          }
+    "CHAROF" Term Term                          -> Term { cons("CharOf")       }
+    "CONCAT" Term Term                          -> Term { cons("Concat")       }
+    "GT" Term Term                              -> Term { cons("Greater")      }
+    "SIZE" Term                                 -> Term { cons("StrSize")      }
+
+    ID "=" Term -> Field { cons("Field") }
+
+    "<" ID "=" ID ">" "=>" Term -> Branch { cons("Branch") }
+
+    ID "<" Id ">" "=" Term          -> Binding   { cons("Binding")    }
+    ID "<"    ">" "=" Term          -> Binding   { cons("BindingWithoutVar")    }
+    BindingAs                       -> Binding
+    ID "<" Id ">" ":" Type "=" Term -> BindingAs { cons("BindingAs") }
+
+%%TODO make sure <0> doesn't break anything
+  context-free priorities
+      Term "!" ID                                 -> Term
+    > Term "[" Type "]"                           -> Term
+    > Term Term                                   -> Term
+<0> > Term ":" Type                               -> Term
+    > { 
+       "MUL" Term Term                            -> Term 
+       "DIV" Term Term                            -> Term 
+       "ADD" Term Term                            -> Term 
+       "SUB" Term Term                            -> Term 
+       "CHAROF" Term Term                         -> Term 
+       "CONCAT" Term Term                         -> Term 
+       "GT" Term Term                             -> Term 
+       "SIZE" Term                                -> Term 
+      }
+ <0> > {
+      "FOLD" "[" Type "]" Term                    -> Term 
+      "UNFOLD" "[" Type "]" Term                  -> Term 
+      "\\" ID ":" Type "." Term                   -> Term
+      "\\" ID "::" Kind "." Term                  -> Term
+      "LET" "SEQ" "<" Id ">" Binding+ "IN" Term   -> Term
+      "LET" "PAR" "<" Id ">" Binding+ "IN" Term   -> Term
+      "CASE" Term "OF" { Branch ";" }+            -> Term
+      "IF" Term "THEN" Term "ELSE" Term           -> Term 
+      "<" ID "=" ID ">" "=>" Term                 -> Branch 
+      }
+
+module BinderLang/Kind
+
+exports
+  sorts Kind
+
+  context-free syntax
+    Kind "=>" Kind        -> Kind { cons("KiArrow"), right }
+    "*"                   -> Kind { cons("KiStar")         }
+    "{" Kind "," Kind "}" -> Kind { cons("KiPair")         }
+    "(" Kind ")"          -> Kind { brackets               }
+
+module BinderLang/Lexical
+
+exports
+  sorts
+    ID QID MID LEXEME STRING INT Id
+    Keyword BasicType
+
+  %% -- Layout and comments --------------------------------------------
+  lexical syntax
+    [\ \t\r\n]        -> LAYOUT
+    "--" ~[\n\r]* LineTerminator -> LAYOUT 
+  context-free restrictions
+    LAYOUT? -/- [\ \t\r\n] 
+    LAYOUT? -/- [\-].[\-] 
+
+  %% -- Line Terminators ----------------------------------------------
+        
+  lexical syntax
+    [\n]           -> LineTerminator
+    [\r][\n]       -> LineTerminator
+    CR             -> LineTerminator
+    EOF            -> LineTerminator
+
+    [\r] -> CR
+
+  lexical restrictions
+    CR -/- [\n]
+
+  %% End of file is empty.
+  lexical syntax    
+    -> EOF
+
+  lexical restrictions
+    EOF -/- ~[]
+
+  %% -- Identifiers ----------------------------------------------------
+  lexical syntax
+    [a-zA-Z][a-zA-Z0-9]*                -> ID
+    ID "." {ID "."}+                    -> QID
+
+    %%Rest is only allowed to start with defs
+    %%I have no idea why I have to call LAYOUT explicit
+   RestVisibility? LAYOUT* "TYPE" ~[]* EOF                  -> Rest
+   RestVisibility? LAYOUT* "VAL" ~[]* EOF                   -> Rest
+   RestVisibility? LAYOUT* RestBinderType LAYOUT* "BINDER"~[]* EOF  -> Rest
+   RestVisibility? LAYOUT* "BINDING" ~[]* EOF               -> Rest
+   RestVisibility? LAYOUT* "BRACKET" ~[]* EOF               -> Rest
+
+        
+    "PUBLIC"  -> RestVisibility 
+    "PRIVATE" -> RestVisibility
+    "SEQ" -> RestBinderType
+    "PAR" -> RestBinderType
+    
+    ID  -> MID
+    QID -> MID
+
+    ID  -> Id
+    QID -> Id
+
+    Keyword -> ID  { reject }
+    Keyword -> MID { reject }
+
+    BasicType -> ID  { reject }
+    BasicType -> MID { reject }
+
+  lexical restrictions
+    ID  -/- [a-zA-Z0-9]
+    QID -/- [\.]
+    MID -/- [\.]
+
+  %% -- Constants ------------------------------------------------------
+  lexical syntax
+    "\""~[\"\\\n\r]*"\"" -> STRING
+   "-"? [0-9]+           -> INT 
+
+  %% -- Lexemes in syntax annotations ----------------------------------
+  lexical syntax
+    [\!-\~][\!-\~]* -> LEXEME
+
+ %%   Keyword -> LEXEME { reject }
+
+  lexical restrictions
+    LEXEME -/- [\!-\~]
+    INT -/- [0-9]
+
+  %% -- Keywords -------------------------------------------------------
+  lexical syntax
+    "MODULE"    -> Keyword
+    "IMPORT"    -> Keyword
+    "QUALIFIED" -> Keyword
+    "AS"        -> Keyword
+    "RENAMING"  -> Keyword
+    "ONLY"      -> Keyword
+    "WITHOUT"   -> Keyword
+    "VAL"       -> Keyword
+    "CON"       -> Keyword
+    "DATA"      -> Keyword
+    "TYPE"      -> Keyword
+    "BINDER"    -> Keyword
+    "BINDING"   -> Keyword
+    "BRACKET"   -> Keyword
+    "USING"     -> Keyword
+    "ARG"       -> Keyword
+    "FIX"       -> Keyword
+    "LET"       -> Keyword
+    "SEQ"       -> Keyword
+    "PAR"       -> Keyword
+    "REC"       -> Keyword
+    "FN"        -> Keyword
+    "EQN"       -> Keyword
+    "IF"        -> Keyword
+    "THEN"      -> Keyword
+    "ELSE"      -> Keyword
+    "TRUE"      -> Keyword
+    "FALSE"     -> Keyword
+    "PUBLIC"    -> Keyword
+    "PRIVATE"   -> Keyword
+    "FOLD"      -> Keyword
+    "UNFOLD"    -> Keyword
+    "VAR"       -> Keyword
+    "BINDINGS"  -> Keyword
+    "LR"        -> Keyword
+    "RL"        -> Keyword
+    "BODY"      -> Keyword
+    "BINDEE"    -> Keyword
+    "ARG"       -> Keyword
+    "ADD"       -> Keyword
+    "SUB"       -> Keyword
+    "MUL"       -> Keyword
+    "DIV"       -> Keyword
+    "CHAROF"    -> Keyword
+    "CONCAT"    -> Keyword
+    "GT"        -> Keyword
+    "SIZE"      -> Keyword
+    "LEFT"      -> Keyword
+    "RIGHT"     -> Keyword
+    
+  lexical restrictions
+    "MODULE" "IMPORT" "QUALIFIED" "AS" "RENAMING" "ONLY" "WITHOUT" "PUBLIC" "PIRVATE"
+    "VAL" "CON" "DATA" "TYPE" "BINDER" "BINDING" "IF" "THEN" "ELSE" "TRUE" "FALSE" "LEFT" "RIGHT"
+    "LR" "RL" "BODY" "BINDING" "BINDEE" "VAR" "ARG" "SIZE" "SUB" "ADD" "DIV" "MUL" "GT" "CONCAT" "CHAROF"
+    "BRACKET" "USING" "ARG" "FIX" "LET" "SEQ" "PAR" "REC" "EQN" "FN" "FOLD" "UNFOLD" -/- [a-zA-Z0-9]
+
+  %% -- Basic types ----------------------------------------------------
+  lexical syntax
+    "Int"    -> BasicType
+    "String" -> BasicType
+    "Bool" -> BasicType
+
+  lexical restrictions
+    "Int" "String" "Bool" -/- [a-zA-Z0-9]
+
+module BinderLang/Module
+
+imports BinderLang/Lexical
+imports BinderLang/Kind
+imports BinderLang/Term
+imports BinderLang/SyntaxExtension
+
+exports
+  context-free start-symbols Module ModuleRest DefRest
+  sorts
+    Module ModuleRest Import Def DefRest TypeDef ValDef BinderDef BindingDef BinderType BracketDef
+    ImportedModule ImportModification ImportRenaming ImportRestriction
+    ExportedIdentifier IdentifierRenaming ImportedIdentifier Visibility
+   
+
+
+  context-free syntax
+    "MODULE" MID Import* Def* -> Module { cons("Module") }
+    "MODULE" MID Import* Rest? -> ModuleRest { cons("ModuleRest") }
+    Def Rest? 	               -> DefRest { cons("DefRest") }
+	
+    TypeDef    -> Def
+    ValDef     -> Def
+    BinderDef  -> Def
+    BindingDef -> Def
+    BracketDef -> Def
+    
+
+    "PUBLIC"  -> Visibility { cons("Public")  }
+    "PRIVATE" -> Visibility { cons("Private") }
+
+    %% -- Imports ------------------------------------------------------
+    Visibility? "IMPORT" ImportedModule ImportModification* -> Import { cons("Import") }
+
+    MID                     -> ImportedModule { cons("NotQualified")   }
+    "QUALIFIED" MID         -> ImportedModule { cons("Qualified")   }
+    "QUALIFIED" MID "AS" ID -> ImportedModule { cons("QualifiedAs") }
+
+    ImportRenaming    -> ImportModification
+    ImportRestriction -> ImportModification
+
+    ID  -> ExportedIdentifier
+    QID -> ExportedIdentifier
+
+    "RENAMING" IdentifierRenaming+ -> ImportRenaming { cons("Renaming") }
+
+    "(" ExportedIdentifier "AS" ExportedIdentifier ")"           -> IdentifierRenaming { cons("SingleRenaming") }
+    "(" ExportedIdentifier+ ")" "AS" "(" ExportedIdentifier+ ")" -> IdentifierRenaming { cons("ListRenaming")   }
+
+    ExportedIdentifier -> ImportedIdentifier
+    IdentifierRenaming -> ImportedIdentifier
+
+    "ONLY" ImportedIdentifier+    -> ImportRestriction { cons("Only")    }
+    "WITHOUT" ExportedIdentifier+ -> ImportRestriction { cons("Without") }
+
+    %% -- Definitions --------------------------------------------------
+    Visibility? "TYPE" ID "=" Type AppSyntax?                   -> TypeDef    { cons("TypeDef")    }
+    Visibility? "VAL" ID "=" Term AppSyntax?                    -> ValDef     { cons("ValDef")     }
+    Visibility? BinderType "BINDER" ID ":" "("Type"," Type")" "=" Term BinderSyntax?   -> BinderDef  { cons("BinderDef")  }
+    Visibility? "BINDING" ID ":" "("Type"," Type")" "FOR" Id "=" Term BindingSyntax?   -> BindingDef { cons("BindingDef") }
+    Visibility? "BRACKET" ID "=" BracketLhs "AS" BracketRhs     -> BracketDef { cons("BracketDef") }
+
+    "SEQ" -> BinderType { cons("SeqBinder") }
+    "PAR" -> BinderType { cons("ParBinder") }
